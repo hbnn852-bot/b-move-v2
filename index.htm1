@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B-Move | شاركي، بادري، اصنعي أثرًا</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Tahoma,Arial,sans-serif;background:#f2faff;color:#244457}
+header{text-align:center;padding:30px 15px;background:linear-gradient(135deg,#83d0f7,#dff5ff);border-radius:0 0 28px 28px}
+.logo{font-size:35px;font-weight:bold;background:white;color:#2679a5;border-radius:18px;width:65px;height:65px;display:grid;place-items:center;margin:auto}
+h1{color:#185779;margin-bottom:8px}
+main{max-width:800px;margin:20px auto;padding:12px}
+.card{background:white;border:1px solid #d6ebf6;border-radius:18px;padding:20px;margin-bottom:18px;box-shadow:0 5px 18px #4386a010}
+h2{color:#2679a5}
+input,select,textarea{width:100%;padding:12px;margin:7px 0 13px;border:1px solid #c9e4f0;border-radius:10px;font:inherit}
+button{padding:12px 18px;border:0;border-radius:10px;background:#79c9f1;color:#174c68;font-weight:bold;font-size:15px;cursor:pointer;margin:4px}
+button.secondary{background:#e3f5ff}
+.hidden{display:none!important}
+.notice{background:#e9f8ff;padding:12px;border-radius:10px;margin-top:12px}
+.activity{border:1px solid #d8edf7;border-radius:13px;padding:14px;margin-top:12px}
+.small{font-size:13px;color:#678393;line-height:1.8}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">B</div>
+<h1>B-Move</h1>
+<p>شاركي، بادري، اصنعي أثرًا</p>
+<p>منصتك المدرسية للأنشطة والمسابقات والتطوع 💙</p>
+</header>
+<main>
+<section class="card" id="home">
+<h2>أهلًا بكِ في B-Move</h2>
+<p>اكتشفي الأنشطة المدرسية، شاركي في المسابقات، واصنعي أثرًا تطوعيًا.</p>
+<button onclick="show('login')">تسجيل الدخول</button>
+<button onclick="show('signup')">إنشاء حساب جديد</button>
+</section>
+
+<section class="card hidden" id="signup">
+<h2>إنشاء حساب جديد</h2>
+<label>الاسم الكامل</label>
+<input id="newName" placeholder="اكتبي اسمك">
+<label>اسم المستخدم</label>
+<input id="newUser" placeholder="اختاري اسم مستخدم">
+<label>كلمة المرور</label>
+<input id="newPass" type="password" placeholder="اختاري كلمة مرور">
+<label>نوع الحساب</label>
+<select id="newRole">
+<option value="student">طالبة</option>
+<option value="teacher">معلمة</option>
+</select>
+<button onclick="register()">إنشاء الحساب</button>
+<button class="secondary" onclick="show('home')">رجوع</button>
+<div id="signupMsg" class="notice hidden"></div>
+</section>
+
+<section class="card hidden" id="login">
+<h2>تسجيل الدخول</h2>
+<label>اسم المستخدم</label>
+<input id="loginUser" placeholder="اسم المستخدم">
+<label>كلمة المرور</label>
+<input id="loginPass" type="password" placeholder="كلمة المرور">
+<button onclick="login()">دخول</button>
+<button class="secondary" onclick="show('home')">رجوع</button>
+<div id="loginMsg" class="notice hidden"></div>
+</section>
+
+<section class="hidden" id="dashboard">
+<div class="card">
+<h2 id="welcome"></h2>
+<p id="roleLabel"></p>
+<button onclick="showPanel('activities')">الأنشطة والمسابقات</button>
+<button onclick="showPanel('records')">سجلاتي</button>
+<button class="secondary" onclick="logout()">تسجيل الخروج</button>
+</div>
+
+<div class="card hidden" id="createActivity">
+<h2>نشر نشاط جديد</h2>
+<label>عنوان النشاط أو المسابقة</label>
+<input id="actTitle" placeholder="عنوان النشاط">
+<label>التاريخ</label>
+<input id="actDate" type="date">
+<label>المرحلة الدراسية</label>
+<select id="actStage">
+<option>ابتدائي</option><option>متوسط</option><option>ثانوي</option><option>جميع المراحل</option>
+</select>
+<label>الصف والفصل</label>
+<input id="actClass" placeholder="مثال: ثالث ثانوي - ٢">
+<label>التفاصيل</label>
+<textarea id="actDesc" placeholder="اكتبي تفاصيل النشاط وطريقة المشاركة"></textarea>
+<button onclick="publishActivity()">نشر النشاط</button>
+</div>
+
+<div class="card" id="activitiesPanel">
+<h2>الأنشطة المنشورة</h2>
+<div id="activityList">لا توجد أنشطة حتى الآن.</div>
+</div>
+
+<div class="card hidden" id="recordsPanel">
+<h2>سجلاتي</h2>
+<div id="myRecords">لا توجد سجلات حتى الآن.</div>
+</div>
+</section><footer class="small" style="text-align:center;padding:15px">B-Move © شاركي، بادري، اصنعي أثرًا</footer>
+</main>
+
+<script>
+let users=JSON.parse(localStorage.getItem('bm_users')||'[]');
+let activities=JSON.parse(localStorage.getItem('bm_activities')||'[]');
+let registrations=JSON.parse(localStorage.getItem('bm_regs')||'[]');
+let current=null;
+
+function show(id){
+['home','signup','login','dashboard'].forEach(x=>document.getElementById(x).classList.add('hidden'));
+document.getElementById(id).classList.remove('hidden');
+}
+function register(){
+let name=document.getElementById('newName').value.trim();
+let username=document.getElementById('newUser').value.trim().toLowerCase();
+let password=document.getElementById('newPass').value;
+let role=document.getElementById('newRole').value;
+let msg=document.getElementById('signupMsg');
+msg.classList.remove('hidden');
+if(!name||!username||!password){msg.textContent='أكملي جميع الحقول.';return}
+if(password.length<6){msg.textContent='كلمة المرور يجب أن تكون 6 أحرف على الأقل.';return}
+if(users.some(u=>u.username===username)){msg.textContent='اسم المستخدم مستخدم مسبقًا.';return}
+users.push({name,username,password,role,points:0,hours:0});
+localStorage.setItem('bm_users',JSON.stringify(users));
+msg.textContent='تم إنشاء الحساب على هذا الجهاز. يمكنك تسجيل الدخول الآن.';
+}
+function login(){
+let username=document.getElementById('loginUser').value.trim().toLowerCase();
+let password=document.getElementById('loginPass').value;
+let user=users.find(u=>u.username===username&&u.password===password);
+let msg=document.getElementById('loginMsg');
+msg.classList.remove('hidden');
+if(!user){msg.textContent='اسم المستخدم أو كلمة المرور غير صحيحة.';return}
+current=user;
+openDashboard();
+}
+function openDashboard(){
+show('dashboard');
+document.getElementById('welcome').textContent='مرحبًا، '+current.name+' 💙';
+document.getElementById('roleLabel').textContent=current.role==='teacher'?'حساب معلمة':'حساب طالبة';
+document.getElementById('createActivity').classList.toggle('hidden',current.role!=='teacher');
+renderActivities();
+renderRecords();
+}
+function showPanel(panel){
+document.getElementById('activitiesPanel').classList.toggle('hidden',panel!=='activities');
+document.getElementById('recordsPanel').classList.toggle('hidden',panel!=='records');
+}
+function publishActivity(){
+let title=document.getElementById('actTitle').value.trim();
+if(!title){alert('اكتبي عنوان النشاط أولًا.');return}
+activities.unshift({
+id:Date.now(),title,date:document.getElementById('actDate').value,
+stage:document.getElementById('actStage').value,
+className:document.getElementById('actClass').value,
+desc:document.getElementById('actDesc').value,
+teacher:current.username,teacherName:current.name
+});
+localStorage.setItem('bm_activities',JSON.stringify(activities));
+renderActivities();
+alert('تم حفظ النشاط على هذا الجهاز.');
+}
+function renderActivities(){
+let box=document.getElementById('activityList');
+box.innerHTML='';
+if(!activities.length){box.textContent='لا توجد أنشطة حتى الآن.';return}
+activities.forEach(a=>{
+let div=document.createElement('div');div.className='activity';
+let title=document.createElement('h3');title.textContent=a.title;div.appendChild(title);
+let details=document.createElement('p');details.className='small';
+details.textContent='📅 '+(a.date||'لم يحدد')+' | '+a.stage+' | '+(a.className||'كل الفصول')+' | المعلمة: '+a.teacherName;
+div.appendChild(details);
+let desc=document.createElement('p');desc.textContent=a.desc||'';div.appendChild(desc);
+if(current.role==='student'){
+let b=document.createElement('button');
+let already=registrations.some(r=>r.activityId===a.id&&r.username===current.username);
+b.textContent=already?'تم التسجيل':'التسجيل في النشاط';b.disabled=already;
+b.onclick=()=>{registrations.push({activityId:a.id,username:current.username,verified:false,points:0,hours:0});localStorage.setItem('bm_regs',JSON.stringify(registrations));renderActivities();renderRecords();};
+div.appendChild(b);
+}
+if(current.role==='teacher'&&a.teacher===current.username){
+let registered=registrations.filter(r=>r.activityId===a.id);let h=document.createElement('h4');h.textContent='الطالبات المسجلات: '+registered.length;div.appendChild(h);
+registered.forEach(r=>{
+let u=users.find(x=>x.username===r.username);if(!u)return;
+let row=document.createElement('div');row.className='activity';
+row.textContent=u.name+' — '+(r.verified?'تم توثيق المشاركة':'بانتظار التوثيق');
+let b=document.createElement('button');b.textContent='تسجيل النقاط والساعات';
+b.onclick=()=>{
+let verified=confirm('هل شاركت الطالبة؟ اضغطي موافق للتوثيق.');
+let points=prompt('نقاط السلوك المتميز:',String(r.points||0));
+if(points===null)return;
+let hours=prompt('ساعات التطوع:',String(r.hours||0));
+if(hours===null)return;
+r.verified=verified;r.points=Math.max(0,Number(points)||0);r.hours=Math.max(0,Number(hours)||0);
+u.points=(u.points||0)+r.points;u.hours=(u.hours||0)+r.hours;
+localStorage.setItem('bm_regs',JSON.stringify(registrations));localStorage.setItem('bm_users',JSON.stringify(users));
+renderActivities();renderRecords();
+};
+row.appendChild(b);div.appendChild(row);
+});
+}
+box.appendChild(div);
+});
+}
+function renderRecords(){
+let box=document.getElementById('myRecords');box.innerHTML='';
+if(current.role==='student'){
+let mine=registrations.filter(r=>r.username===current.username);
+let points=mine.reduce((n,r)=>n+(Number(r.points)||0),0);
+let hours=mine.reduce((n,r)=>n+(Number(r.hours)||0),0);
+let summary=document.createElement('p');summary.textContent='نقاط السلوك المتميز: '+points+' | ساعات التطوع: '+hours;box.appendChild(summary);
+mine.forEach(r=>{let a=activities.find(x=>x.id===r.activityId);let d=document.createElement('div');d.className='activity';d.textContent=(a?a.title:'نشاط')+' — '+(r.verified?'تم توثيق المشاركة':'مسجلة');box.appendChild(d)});
+}else{
+box.textContent='يمكنك توثيق المشاركات من قسم الأنشطة التي نشرتِها.';
+}
+}
+function logout(){current=null;show('home')}
+show('home');
+</script>
+</body>
+</html>
